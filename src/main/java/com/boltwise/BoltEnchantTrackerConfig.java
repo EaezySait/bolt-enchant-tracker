@@ -34,4 +34,10 @@ public interface BoltEnchantTrackerConfig extends Config
 
 	@ConfigItem(keyName = "freeFireRunes", name = "Free fire runes", description = "Enable when a staff, Tome of Fire, or other equipment supplies unlimited fire runes", position = 7)
 	default boolean freeFireRunes() { return false; }
+
+	@ConfigItem(keyName = "autoPause", name = "Auto-pause", description = "Pause hourly-rate timers after five seconds without an enchantment", position = 8)
+	default boolean autoPause() { return true; }
+
+	@ConfigItem(keyName = "showOverlay", name = "Show in-game overlay", description = "Show supplies, casts left, and live rates over the game", position = 9)
+	default boolean showOverlay() { return false; }
 }

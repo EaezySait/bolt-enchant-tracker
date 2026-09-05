@@ -1,5 +1,8 @@
 package com.boltwise;
 
+import java.util.Collections;
+import java.util.List;
+
 final class DashboardSnapshot
 {
 	final String boltName;
@@ -19,12 +22,17 @@ final class DashboardSnapshot
 	final long boltsRemaining;
 	final long millisRemaining;
 	final long projectedProfit;
+	final boolean autoPaused;
+	final List<SupplyDisplay> supplies;
+	final long castsAvailable;
+	final String limitingSupply;
 
 	DashboardSnapshot(String boltName, long bolts, long casts, long magicXp,
 		long boltsPerHour, long xpPerHour, long inputPrice, long outputPrice,
 		long runeCostPerCast, long sessionProfit, long profitPerHour, long profitPer11000,
 		int targetLevel, long xpRemaining, long boltsRemaining,
-		long millisRemaining, long projectedProfit)
+		long millisRemaining, long projectedProfit, boolean autoPaused,
+		List<SupplyDisplay> supplies, long castsAvailable, String limitingSupply)
 	{
 		this.boltName = boltName;
 		this.bolts = bolts;
@@ -43,11 +51,16 @@ final class DashboardSnapshot
 		this.boltsRemaining = boltsRemaining;
 		this.millisRemaining = millisRemaining;
 		this.projectedProfit = projectedProfit;
+		this.autoPaused = autoPaused;
+		this.supplies = Collections.unmodifiableList(supplies);
+		this.castsAvailable = castsAvailable;
+		this.limitingSupply = limitingSupply;
 	}
 
 	static DashboardSnapshot empty(int targetLevel)
 	{
 		return new DashboardSnapshot("Waiting for enchantment…", 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, targetLevel, 0, 0, 0, 0);
+			0, 0, 0, 0, 0, 0, targetLevel, 0, 0, 0, 0, false,
+			Collections.emptyList(), 0, "—");
 	}
 }

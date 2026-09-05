@@ -4,23 +4,24 @@ import java.util.Map;
 
 final class SessionSnapshot
 {
-	private final long startedAtMillis;
-	private final long nowMillis;
+	private final long elapsedMillis;
+	private final boolean paused;
 	private final EnchantType latestType;
 	private final Map<EnchantType, Long> enchantedCounts;
 	private final Map<EnchantType, Long> castCounts;
 
-	SessionSnapshot(long startedAtMillis, long nowMillis, EnchantType latestType,
+	SessionSnapshot(long elapsedMillis, boolean paused, EnchantType latestType,
 		Map<EnchantType, Long> enchantedCounts, Map<EnchantType, Long> castCounts)
 	{
-		this.startedAtMillis = startedAtMillis;
-		this.nowMillis = nowMillis;
+		this.elapsedMillis = elapsedMillis;
+		this.paused = paused;
 		this.latestType = latestType;
 		this.enchantedCounts = enchantedCounts;
 		this.castCounts = castCounts;
 	}
 
-	long getElapsedMillis() { return startedAtMillis == 0 ? 0 : Math.max(1, nowMillis - startedAtMillis); }
+	long getElapsedMillis() { return elapsedMillis; }
+	boolean isPaused() { return paused; }
 	EnchantType getLatestType() { return latestType; }
 	Map<EnchantType, Long> getEnchantedCounts() { return enchantedCounts; }
 	Map<EnchantType, Long> getCastCounts() { return castCounts; }

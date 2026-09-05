@@ -6,11 +6,16 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.EnumComposition;
+import net.runelite.api.EnumID;
 import net.runelite.api.Experience;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
@@ -20,6 +25,7 @@ import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.StatChanged;
 import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -28,6 +34,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.ui.overlay.OverlayManager;
 
 @Slf4j
 @PluginDescriptor(
@@ -37,6 +44,17 @@ import net.runelite.client.ui.NavigationButton;
 )
 public class BoltEnchantTrackerPlugin extends Plugin
 {
+	private static final int[] RUNE_POUCH_QUANTITY_VARBITS = {
+		VarbitID.RUNE_POUCH_QUANTITY_1, VarbitID.RUNE_POUCH_QUANTITY_2,
+		VarbitID.RUNE_POUCH_QUANTITY_3, VarbitID.RUNE_POUCH_QUANTITY_4,
+		VarbitID.RUNE_POUCH_QUANTITY_5, VarbitID.RUNE_POUCH_QUANTITY_6
+	};
+	private static final int[] RUNE_POUCH_TYPE_VARBITS = {
+		VarbitID.RUNE_POUCH_TYPE_1, VarbitID.RUNE_POUCH_TYPE_2,
+		VarbitID.RUNE_POUCH_TYPE_3, VarbitID.RUNE_POUCH_TYPE_4,
+		VarbitID.RUNE_POUCH_TYPE_5, VarbitID.RUNE_POUCH_TYPE_6
+	};
+
 	private final SessionTracker tracker = new SessionTracker();
 
 	@Inject private Client client;
@@ -44,6 +62,8 @@ public class BoltEnchantTrackerPlugin extends Plugin
 	@Inject private ClientToolbar clientToolbar;
 	@Inject private ItemManager itemManager;
 	@Inject private BoltEnchantTrackerConfig config;
+	@Inject private OverlayManager overlayManager;
+	@Inject private BoltWiseOverlay overlay;
 
 	private BoltEnchantTrackerPanel panel;
 	private NavigationButton navigationButton;
@@ -62,6 +82,7 @@ public class BoltEnchantTrackerPlugin extends Plugin
 			.panel(panel)
 			.build();
 		clientToolbar.addNavigation(navigationButton);
+		overlayManager.add(overlay);
 		SwingUtilities.invokeLater(panel::start);
 		clientThread.invoke(() ->
 		{
@@ -83,6 +104,7 @@ public class BoltEnchantTrackerPlugin extends Plugin
 		{
 			clientToolbar.removeNavigation(navigationButton);
 		}
+		overlayManager.remove(overlay);
 		panel = null;
 		navigationButton = null;
 		log.debug("Bolt Enchant Tracker stopped");
@@ -105,7 +127,7 @@ public class BoltEnchantTrackerPlugin extends Plugin
 		// inventory container event. Scanning 28 slots once per game tick is a cheap,
 		// reliable fallback, and SessionTracker prevents duplicate detections.
 		recordInventory(getInventoryItems(), "game-tick fallback");
-		if (tracker.snapshot(System.currentTimeMillis()).getLatestType() != null)
+		if (tracker.snapshot(System.currentTimeMillis(), config.autoPause()).getLatestType() != null)
 		{
 			refreshDashboard();
 		}
@@ -117,7 +139,7 @@ public class BoltEnchantTrackerPlugin extends Plugin
 		if (event.getSkill() == Skill.MAGIC)
 		{
 			currentMagicXp = event.getXp();
-			if (tracker.snapshot(System.currentTimeMillis()).getLatestType() != null)
+			if (tracker.snapshot(System.currentTimeMillis(), config.autoPause()).getLatestType() != null)
 			{
 				refreshDashboard();
 			}
@@ -176,7 +198,7 @@ public class BoltEnchantTrackerPlugin extends Plugin
 		{
 			log.debug("Detected {} enchanted bolts via {}", detected, source);
 			refreshDashboard();
-			SessionSnapshot session = tracker.snapshot(System.currentTimeMillis());
+			SessionSnapshot session = tracker.snapshot(System.currentTimeMillis(), config.autoPause());
 			log.debug("BoltWise session state: type={}, bolts={}, casts={}",
 				session.getLatestType(), session.getTotalBolts(), session.getTotalCasts());
 		}
@@ -205,7 +227,7 @@ public class BoltEnchantTrackerPlugin extends Plugin
 
 	private DashboardSnapshot createTrackingSnapshot()
 	{
-		SessionSnapshot session = tracker.snapshot(System.currentTimeMillis());
+		SessionSnapshot session = tracker.snapshot(System.currentTimeMillis(), config.autoPause());
 		EnchantType type = session.getLatestType();
 		int targetLevel = config.targetMagicLevel();
 		if (type == null)
@@ -221,16 +243,19 @@ public class BoltEnchantTrackerPlugin extends Plugin
 		long targetXp = Experience.getXpForLevel(targetLevel);
 		long xpRemaining = Math.max(0L, targetXp - currentMagicXp);
 		long castsRemaining = divideRoundingUp(xpRemaining, type.getXpPerCast());
+		SupplySummary supplySummary = createSupplySummary(type);
 
 		return new DashboardSnapshot(type.getDisplayName(), bolts, casts, magicXp,
 			perHour(bolts, elapsed), xpPerHour, 0, 0, 0,
 			0, 0, 0, targetLevel, xpRemaining, castsRemaining * 10L,
-			xpPerHour <= 0 ? 0 : xpRemaining * 3_600_000L / xpPerHour, 0);
+			xpPerHour <= 0 ? 0 : xpRemaining * 3_600_000L / xpPerHour, 0,
+			session.isPaused(), createSupplyDisplays(supplySummary, false),
+			supplySummary.castsLeft, supplySummary.limitingSupply);
 	}
 
 	private DashboardSnapshot createDashboardSnapshot()
 	{
-		SessionSnapshot session = tracker.snapshot(System.currentTimeMillis());
+		SessionSnapshot session = tracker.snapshot(System.currentTimeMillis(), config.autoPause());
 		EnchantType type = session.getLatestType();
 		int targetLevel = config.targetMagicLevel();
 		if (type == null)
@@ -273,11 +298,72 @@ public class BoltEnchantTrackerPlugin extends Plugin
 		long millisRemaining = xpPerHour <= 0 ? 0 : xpRemaining * 3_600_000L / xpPerHour;
 		long projectedProfit = ProfitCalculator.batchProfit(boltsRemaining, castsRemaining,
 			inputPrice, outputPrice, runeCostPerCast, config.includeGeTax());
+		SupplySummary supplySummary = createSupplySummary(type);
 
 		return new DashboardSnapshot(type.getDisplayName(), bolts, casts, magicXp,
 			boltsPerHour, xpPerHour, inputPrice, outputPrice, runeCostPerCast,
 			sessionProfit, profitPerHour, profitPer11000, targetLevel, xpRemaining, boltsRemaining,
-			millisRemaining, projectedProfit);
+			millisRemaining, projectedProfit, session.isPaused(),
+			createSupplyDisplays(supplySummary, true), supplySummary.castsLeft,
+			supplySummary.limitingSupply);
+	}
+
+	DashboardSnapshot getDashboardSnapshot()
+	{
+		return dashboardSnapshot;
+	}
+
+	private SupplySummary createSupplySummary(EnchantType type)
+	{
+		Map<Integer, Long> quantities = inventoryAndRunePouchQuantities();
+		return SupplyCalculator.calculate(type,
+			quantities.getOrDefault(type.getUnenchantedId(), 0L), quantities, this::isFree);
+	}
+
+	private List<SupplyDisplay> createSupplyDisplays(SupplySummary summary, boolean includeImages)
+	{
+		List<SupplyDisplay> displays = new ArrayList<>();
+		for (SupplyAmount supply : summary.supplies)
+		{
+			BufferedImage icon = null;
+			BufferedImage overlayIcon = null;
+			if (includeImages)
+			{
+				icon = itemManager.getImage(supply.itemId);
+				overlayIcon = itemManager.getImage(supply.itemId);
+			}
+			displays.add(new SupplyDisplay(icon, overlayIcon, supply.name, supply.quantity, supply.unlimited));
+		}
+		return displays;
+	}
+
+	private Map<Integer, Long> inventoryAndRunePouchQuantities()
+	{
+		Map<Integer, Long> quantities = new HashMap<>();
+		Item[] inventoryItems = getInventoryItems();
+		if (inventoryItems != null)
+		{
+			for (Item item : inventoryItems)
+			{
+				if (item != null && item.getId() > 0 && item.getQuantity() > 0)
+				{
+					quantities.merge(item.getId(), (long) item.getQuantity(), Long::sum);
+				}
+			}
+		}
+
+		EnumComposition runePouchRunes = client.getEnum(EnumID.RUNEPOUCH_RUNE);
+		for (int i = 0; i < RUNE_POUCH_TYPE_VARBITS.length; i++)
+		{
+			int runeType = client.getVarbitValue(RUNE_POUCH_TYPE_VARBITS[i]);
+			int quantity = client.getVarbitValue(RUNE_POUCH_QUANTITY_VARBITS[i]);
+			if (runeType != 0 && quantity > 0)
+			{
+				int itemId = runePouchRunes.getIntValue(runeType);
+				quantities.merge(itemId, (long) quantity, Long::sum);
+			}
+		}
+		return quantities;
 	}
 
 	private long runeCost(EnchantType type)

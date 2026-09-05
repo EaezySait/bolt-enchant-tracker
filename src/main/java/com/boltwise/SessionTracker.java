@@ -8,12 +8,16 @@ import net.runelite.api.Item;
 
 final class SessionTracker
 {
+	static final long AUTO_PAUSE_DELAY_MILLIS = 5_000L;
+
 	private final Map<Integer, Integer> previousQuantities = new HashMap<>();
 	private final Map<EnchantType, Long> enchantedCounts = new EnumMap<>(EnchantType.class);
 	private final Map<EnchantType, Long> castCounts = new EnumMap<>(EnchantType.class);
 	private final Map<EnchantType, Integer> pendingInputLosses = new EnumMap<>(EnchantType.class);
 	private final Map<EnchantType, Long> pendingLossTimes = new EnumMap<>(EnchantType.class);
 	private long startedAtMillis;
+	private long lastCastAtMillis;
+	private long excludedIdleMillis;
 	private EnchantType latestType;
 	private boolean initialized;
 
@@ -52,6 +56,12 @@ final class SessionTracker
 				{
 					startedAtMillis = nowMillis;
 				}
+				else if (lastCastAtMillis > 0
+					&& nowMillis - lastCastAtMillis > AUTO_PAUSE_DELAY_MILLIS)
+				{
+					excludedIdleMillis += nowMillis - lastCastAtMillis - AUTO_PAUSE_DELAY_MILLIS;
+				}
+				lastCastAtMillis = nowMillis;
 				enchantedCounts.merge(type, (long) outputGain, Long::sum);
 				castCounts.merge(type, (long) ((outputGain + 9) / 10), Long::sum);
 				latestType = type;
@@ -79,6 +89,8 @@ final class SessionTracker
 		enchantedCounts.clear();
 		castCounts.clear();
 		startedAtMillis = 0;
+		lastCastAtMillis = 0;
+		excludedIdleMillis = 0;
 		latestType = null;
 		rebaseline(currentInventory);
 	}
@@ -97,9 +109,16 @@ final class SessionTracker
 		initialized = true;
 	}
 
-	synchronized SessionSnapshot snapshot(long nowMillis)
+	synchronized SessionSnapshot snapshot(long nowMillis, boolean autoPause)
 	{
-		return new SessionSnapshot(startedAtMillis, nowMillis, latestType,
+		long effectiveNow = autoPause && lastCastAtMillis > 0
+			? Math.min(nowMillis, lastCastAtMillis + AUTO_PAUSE_DELAY_MILLIS)
+			: nowMillis;
+		long elapsedMillis = startedAtMillis == 0 ? 0
+			: Math.max(1L, effectiveNow - startedAtMillis - (autoPause ? excludedIdleMillis : 0L));
+		boolean paused = autoPause && lastCastAtMillis > 0
+			&& nowMillis - lastCastAtMillis >= AUTO_PAUSE_DELAY_MILLIS;
+		return new SessionSnapshot(elapsedMillis, paused, latestType,
 			new EnumMap<>(enchantedCounts), new EnumMap<>(castCounts));
 	}
 
