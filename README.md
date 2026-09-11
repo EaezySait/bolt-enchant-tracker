@@ -35,6 +35,14 @@ The plugin is observational only. It never clicks, casts, types, withdraws, equi
 
 Enable **Show in-game overlay** to display supplies, casts left, and live rates over the game. Enable **Auto-pause** to prevent idle time from reducing your hourly rates when you stop enchanting.
 
+### In-game overlay
+
+<img src="docs/boltwise-overlay-preview.png" alt="Cleaned-up BoltWise overlay preview showing supplies and session rates" width="270">
+
+*Cleaned-up preview; background and pixel details have been retouched. [View the original in-game screenshot](docs/boltwise-overlay.png).*
+
+Keep your supplies and session rates visible while you enchant. The optional overlay shows bolt and rune icons, casts left, bolts/hour, profit/hour, and whether tracking is active or auto-paused. Turn it on or off with **Show in-game overlay** in the plugin settings.
+
 ## Important pricing note
 
 Guide prices are estimates and may differ from actual Grand Exchange fills. Enter your actual buy price and intended sell price in the RuneLite plugin configuration for a more realistic projection. Reset the session when changing bolt types if price overrides are enabled.
