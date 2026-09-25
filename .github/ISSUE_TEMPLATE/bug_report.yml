@@ -1,0 +1,28 @@
+name: Report a bug
+description: Tell us about something that is not working in BoltWise.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve BoltWise! Reports are public. Please leave out login details and other personal information.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened, and what did you expect?
+      placeholder: Describe the problem and what you thought BoltWise would show.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can we reproduce it?
+      description: Include the bolt type and relevant settings, such as price overrides or free runes.
+      placeholder: Tell us what you were doing when the problem happened.
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or extra details (optional)
+      description: Paste or drag screenshots here. Include your RuneLite version if you know it.

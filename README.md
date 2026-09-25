@@ -8,6 +8,16 @@ BoltWise automatically detects bolt enchanting and shows live session speed, Mag
 
 The plugin is observational only. It never clicks, casts, types, withdraws, equips, or otherwise performs game actions.
 
+## Help & suggestions
+
+Having trouble with BoltWise, or have an idea for something we should add? We'd love to hear from you!
+
+- 🐛 **[Report a bug](https://github.com/EaezySait/bolt-enchant-tracker/issues/new?template=bug_report.yml)** — Tell us what happened and what you expected. Include a screenshot if you can.
+- 💡 **[Suggest a feature](https://github.com/EaezySait/bolt-enchant-tracker/issues/new?template=feature_request.yml)** — What would make your enchanting sessions easier? Share your idea!
+- 💬 **[Ask a question](https://github.com/EaezySait/bolt-enchant-tracker/issues/new?template=blank&title=%5BQuestion%5D%20)** — Need help with settings, prices, or understanding your stats? Ask here.
+
+You'll need a free GitHub account to post. Issues and screenshots are public, so please leave out account details and other personal information. You can also [browse existing questions and suggestions](https://github.com/EaezySait/bolt-enchant-tracker/issues).
+
 ## Features
 
 - Detects all ten gem bolt types in both standard and dragon-bolt variants
