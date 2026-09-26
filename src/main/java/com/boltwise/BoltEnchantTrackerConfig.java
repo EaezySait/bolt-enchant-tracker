@@ -40,4 +40,10 @@ public interface BoltEnchantTrackerConfig extends Config
 
 	@ConfigItem(keyName = "showOverlay", name = "Show in-game overlay", description = "Show supplies, casts left, and live rates over the game", position = 9)
 	default boolean showOverlay() { return false; }
+
+	@ConfigItem(keyName = "showEnchantTickBar", name = "Show enchant tick bar", description = "Show a game-tick rhythm guide in the in-game overlay; enable Show in-game overlay too", position = 10)
+	default boolean showEnchantTickBar() { return false; }
+
+	@ConfigItem(keyName = "showEnchantStreak", name = "Show 1-tick streak", description = "Show consecutive enchanting ticks and the session best in the in-game overlay", position = 11)
+	default boolean showEnchantStreak() { return false; }
 }

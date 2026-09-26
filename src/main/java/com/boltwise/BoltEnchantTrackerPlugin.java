@@ -56,6 +56,7 @@ public class BoltEnchantTrackerPlugin extends Plugin
 	};
 
 	private final SessionTracker tracker = new SessionTracker();
+	private final EnchantTickTracker enchantTicks = new EnchantTickTracker();
 
 	@Inject private Client client;
 	@Inject private ClientThread clientThread;
@@ -73,6 +74,7 @@ public class BoltEnchantTrackerPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		enchantTicks.reset();
 		dashboardSnapshot = DashboardSnapshot.empty(config.targetMagicLevel());
 		panel = new BoltEnchantTrackerPanel(() -> dashboardSnapshot, this::requestReset);
 		navigationButton = NavigationButton.builder()
@@ -96,6 +98,7 @@ public class BoltEnchantTrackerPlugin extends Plugin
 	@Override
 	protected void shutDown()
 	{
+		enchantTicks.reset();
 		if (panel != null)
 		{
 			SwingUtilities.invokeLater(panel::stop);
@@ -127,6 +130,7 @@ public class BoltEnchantTrackerPlugin extends Plugin
 		// inventory container event. Scanning 28 slots once per game tick is a cheap,
 		// reliable fallback, and SessionTracker prevents duplicate detections.
 		recordInventory(getInventoryItems(), "game-tick fallback");
+		enchantTicks.tick(System.nanoTime());
 		if (tracker.snapshot(System.currentTimeMillis(), config.autoPause()).getLatestType() != null)
 		{
 			refreshDashboard();
@@ -149,6 +153,8 @@ public class BoltEnchantTrackerPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
+		// Never carry a timing streak through loading, hopping, or reconnection.
+		enchantTicks.interrupt();
 		switch (event.getGameState())
 		{
 			case LOGGED_IN:
@@ -162,6 +168,7 @@ public class BoltEnchantTrackerPlugin extends Plugin
 				tracker.rebaseline(null);
 				break;
 			case LOGIN_SCREEN:
+				enchantTicks.reset();
 				tracker.reset(null);
 				refreshDashboard();
 				break;
@@ -180,6 +187,7 @@ public class BoltEnchantTrackerPlugin extends Plugin
 	{
 		clientThread.invoke(() ->
 		{
+			enchantTicks.reset();
 			tracker.reset(getInventoryItems());
 			refreshDashboard();
 		});
@@ -196,6 +204,7 @@ public class BoltEnchantTrackerPlugin extends Plugin
 		long detected = tracker.acceptInventory(items, System.currentTimeMillis());
 		if (detected > 0)
 		{
+			enchantTicks.record(detected);
 			log.debug("Detected {} enchanted bolts via {}", detected, source);
 			refreshDashboard();
 			SessionSnapshot session = tracker.snapshot(System.currentTimeMillis(), config.autoPause());
@@ -311,6 +320,11 @@ public class BoltEnchantTrackerPlugin extends Plugin
 	DashboardSnapshot getDashboardSnapshot()
 	{
 		return dashboardSnapshot;
+	}
+
+	EnchantTickTracker getEnchantTicks()
+	{
+		return enchantTicks;
 	}
 
 	private SupplySummary createSupplySummary(EnchantType type)

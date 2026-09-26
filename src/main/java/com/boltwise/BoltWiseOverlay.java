@@ -57,6 +57,20 @@ final class BoltWiseOverlay extends OverlayPanel
 		panelComponent.getChildren().add(line("Profit/hour", compactSignedGp(snapshot.profitPerHour),
 			snapshot.profitPerHour > 0 ? GREEN : snapshot.profitPerHour < 0 ? RED : Color.WHITE));
 
+		if (config.showEnchantTickBar())
+		{
+			panelComponent.getChildren().add(TitleComponent.builder()
+				.text("Enchant tick").color(GOLD).build());
+			panelComponent.getChildren().add(new EnchantTickBarComponent(
+				plugin.getEnchantTicks().progress(System.nanoTime())));
+		}
+		if (config.showEnchantStreak())
+		{
+			panelComponent.getChildren().add(line("1-tick streak",
+				number(plugin.getEnchantTicks().getStreak()), GREEN));
+			panelComponent.getChildren().add(line("Session best",
+				number(plugin.getEnchantTicks().getBest()), GOLD));
+		}
 		return super.render(graphics);
 	}
 

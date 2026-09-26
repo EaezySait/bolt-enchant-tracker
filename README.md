@@ -1,6 +1,6 @@
 # Bolt Enchant Tracker (BoltWise)
 
-Current version: **v1.1.1**
+Current version: **v1.2.0**
 
 ![BoltWise session dashboard](docs/boltwise-panel.png)
 
@@ -42,6 +42,16 @@ Enable **Show in-game overlay** to display supplies, casts left, and live rates 
 *Cleaned-up preview; background and pixel details have been retouched. [View the original in-game screenshot](docs/boltwise-overlay.png).*
 
 Keep your supplies and session rates visible while you enchant. The optional overlay shows bolt and rune icons, casts left, bolts/hour, profit/hour, and whether tracking is active or auto-paused. Turn it on or off with **Show in-game overlay** in the plugin settings.
+
+### Enchant tick bar and streak
+
+Enable **Show in-game overlay**, then turn on **Show enchant tick bar** and/or **Show 1-tick streak** in BoltWise settings. Both new options are off by default and can be enabled independently.
+
+The slim bar follows received game ticks and fills over approximately 0.6 seconds to help you keep your enchanting rhythm. It is a timing guide, not a guaranteed click window; lag and server delays can affect it.
+
+**1-tick streak** counts consecutive game ticks with a detected successful enchantment, starting at 1 for the first cast. Extra clicks do not increase it. A tick without an enchantment breaks the streak. Banking or running out of supplies therefore breaks it when you stop casting; loading, hopping, and reconnecting also clear the current streak.
+
+**Session best** keeps your longest streak until you reset the session, log out to the login screen, or disable the plugin. It is preserved across world hops. Delayed or batched inventory updates may break a streak because their original cast timing cannot be established reliably.
 
 ## Important pricing note
 
