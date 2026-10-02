@@ -25,6 +25,7 @@ The plugin is observational only. It never clicks, casts, types, withdraws, equi
 - Includes runes stored in the Rune Pouch and compatible combination runes
 - Calculates casts remaining and identifies the limiting supply
 - Adds an optional movable in-game overlay for supplies and live rates
+- Offers an optional enchant tick rhythm bar, consecutive 1-tick streak, and session best
 
 ## Using BoltWise
 
@@ -37,9 +38,9 @@ Enable **Show in-game overlay** to display supplies, casts left, and live rates 
 
 ### In-game overlay
 
-<img src="docs/boltwise-overlay-preview.png" alt="Cleaned-up BoltWise overlay preview showing supplies and session rates" width="270">
+![BoltWise in-game overlay with supplies, enchant tick bar, 1-tick streak, and session best](docs/boltwise-overlay-ticks.png)
 
-*Cleaned-up preview; background and pixel details have been retouched. [View the original in-game screenshot](docs/boltwise-overlay.png).*
+*Actual in-game screenshot with the optional tick bar and streak counter enabled. Prices and rates shown are examples from this session.*
 
 Keep your supplies and session rates visible while you enchant. The optional overlay shows bolt and rune icons, casts left, bolts/hour, profit/hour, and whether tracking is active or auto-paused. Turn it on or off with **Show in-game overlay** in the plugin settings.
 
